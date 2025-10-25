@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Backend con FastAPI + WebSockets
+  backend:
+    build: ./backend
+    container_name: rps_backend
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONUNBUFFERED=1
+    volumes:
+      - ./backend:/app
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
+    networks:
+      - rps_network
+
+  # Frontend con React + Vite
+  frontend:
+    build: ./frontend
+    container_name: rps_frontend
+    ports:
+      - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    command: npm run dev -- --host
+    networks:
+      - rps_network
+    depends_on:
+      - backend
+
+  # Nginx como proxy reverso
+  nginx:
+    build: ./nginx
+    container_name: rps_nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - rps_network
+
+networks:
+  rps_network:
+    driver: bridge
