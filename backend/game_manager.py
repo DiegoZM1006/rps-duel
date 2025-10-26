@@ -36,6 +36,32 @@ class GameManager:
         del deck[:count]
         return drawn
     
+    def filter_cards_by_role(self, cards: List[Card], is_attacker: bool) -> List[Card]:
+        """Filtra cartas según el rol del jugador"""
+        if is_attacker:
+            # Atacante: no puede tener jokers de defensa
+            return [c for c in cards if c.type != CardType.JOKER_DEFENSE]
+        else:
+            # Defensor: no puede tener jokers de ataque
+            return [c for c in cards if c.type != CardType.JOKER_ATTACK]
+    
+    def draw_cards_for_player(self, deck: List[Card], count: int, is_attacker: bool) -> List[Card]:
+        """Roba cartas del mazo y filtra según el rol del jugador"""
+        drawn = []
+        while len(drawn) < count and len(deck) > 0:
+            card = deck.pop(0)
+            # Filtrar según rol
+            if is_attacker and card.type == CardType.JOKER_DEFENSE:
+                # Devolver al final del mazo si no es apropiada
+                deck.append(card)
+                continue
+            elif not is_attacker and card.type == CardType.JOKER_ATTACK:
+                # Devolver al final del mazo si no es apropiada
+                deck.append(card)
+                continue
+            drawn.append(card)
+        return drawn
+    
     def select_random_event(self) -> EventType:
         """Selecciona un evento aleatorio"""
         events = list(EventType)
@@ -53,14 +79,14 @@ class GameManager:
         player1 = Player(
             id=player1_id,
             name=player1_name,
-            hand=self.draw_cards(deck, 4),
+            hand=self.draw_cards_for_player(deck, 4, is_p1_attacker),
             is_attacker=is_p1_attacker
         )
         
         player2 = Player(
             id=player2_id,
             name=player2_name,
-            hand=self.draw_cards(deck, 4),
+            hand=self.draw_cards_for_player(deck, 4, not is_p1_attacker),
             is_attacker=not is_p1_attacker
         )
         
@@ -110,7 +136,8 @@ class GameManager:
             defender = next(p for p in game.players if not p.is_attacker)
             deck = self._game_decks.get(game_id, [])
             if len(deck) > 0:
-                defender.hand.extend(self.draw_cards(deck, 1))
+                extra_cards = self.draw_cards_for_player(deck, 1, defender.is_attacker)
+                defender.hand.extend(extra_cards)
         else:
             game.attacker_cards = cards
         
@@ -152,12 +179,19 @@ class GameManager:
         attacker = next(p for p in game.players if p.is_attacker)
         defender = next(p for p in game.players if not p.is_attacker)
         
-        # Contar defensas exitosas
+        # Contar defensas exitosas - cada carta de defensa solo se usa una vez
         matches = 0
+        used_defense_indices = set()
+        
         for atk_card in game.attacker_cards:
-            for def_card in game.defender_cards:
+            for def_idx, def_card in enumerate(game.defender_cards):
+                # Saltar cartas de defensa ya usadas
+                if def_idx in used_defense_indices:
+                    continue
+                    
                 if self._can_defend(atk_card, def_card, game.event):
                     matches += 1
+                    used_defense_indices.add(def_idx)  # Marcar como usada
                     break
         
         # Calcular puntos según el número total de cartas jugadas
@@ -216,14 +250,16 @@ class GameManager:
         if attack_card.type == CardType.JOKER_ATTACK:
             return False
         
-        # Círculo invertido
+        # Círculo invertido: juego clásico de piedra, papel, tijera
+        # La defensa debe GANAR al ataque (no igualar)
         if event == EventType.INVERTED_CIRCLE:
-            mapping = {
-                CardType.ROCK: CardType.SCISSORS,
-                CardType.PAPER: CardType.ROCK,
-                CardType.SCISSORS: CardType.PAPER
+            # Mapeo: qué carta de defensa le gana a cada carta de ataque
+            winning_defense = {
+                CardType.ROCK: CardType.PAPER,      # PAPEL le gana a PIEDRA
+                CardType.PAPER: CardType.SCISSORS,   # TIJERA le gana a PAPEL
+                CardType.SCISSORS: CardType.ROCK     # PIEDRA le gana a TIJERA
             }
-            return defense_card.type == mapping.get(attack_card.type)
+            return defense_card.type == winning_defense.get(attack_card.type)
         
         # Defensa normal (igualdad)
         return attack_card.type == defense_card.type
@@ -242,11 +278,12 @@ class GameManager:
             for player in game.players:
                 player.hand = []
         
-        # Robar nuevas cartas
+        # Robar nuevas cartas según el rol
         for player in game.players:
             needed = 4 - len(player.hand)
             if needed > 0 and len(deck) >= needed:
-                player.hand.extend(self.draw_cards(deck, needed))
+                new_cards = self.draw_cards_for_player(deck, needed, player.is_attacker)
+                player.hand.extend(new_cards)
         
         # Reset cartas jugadas y reveladas
         game.attacker_cards = []

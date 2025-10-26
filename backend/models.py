@@ -11,11 +11,12 @@ class CardType(str, Enum):
     INSTANT_CHANGE = "instant_change"
     INSTANT_CANCEL = "instant_cancel"
 
-# Tambien debuguear que los jokers de defensa no aparezca en ATAQUE y viceversa
+# Jokers filtrados por rol: Joker de ataque solo para atacantes, Joker de defensa solo para defensores
 # Instanteaneas no sirven
+# TODO: REVISAR TODOS LOS EVENTOS
 class EventType(str, Enum):
-    TRIO_SHOCK = "trio_shock" # Sirve
-    INVERTED_CIRCLE = "inverted_circle" # No sirve
+    TRIO_SHOCK = "trio_shock" # Sirve 
+    INVERTED_CIRCLE = "inverted_circle" # Sirve - Piedra, Papel, Tijera clásico
     EARLY_REVEAL = "early_reveal" # Sirve
     DEFENSE_WALL = "defense_wall" # Sirve
     ATTACK_PRESSURE = "attack_pressure" #   Sirve

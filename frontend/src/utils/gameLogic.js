@@ -14,14 +14,15 @@ export const canDefend = (attackCard, defenseCard, event = null) => {
     return false;
   }
 
-  // Círculo invertido: las defensas son inversas
+  // Círculo invertido: juego clásico de piedra, papel, tijera
+  // La defensa debe GANAR al ataque (no igualar)
   if (event === 'inverted_circle') {
-    const invertedDefenses = {
-      rock: 'scissors',
-      paper: 'rock',
-      scissors: 'paper'
+    const winningDefense = {
+      rock: 'paper',      // PAPEL le gana a PIEDRA
+      paper: 'scissors',  // TIJERA le gana a PAPEL
+      scissors: 'rock'    // PIEDRA le gana a TIJERA
     };
-    return defenseCard.type === invertedDefenses[attackCard.type];
+    return defenseCard.type === winningDefense[attackCard.type];
   }
 
   // Defensa normal: igualdad de tipos
@@ -124,7 +125,7 @@ export const getEventInfo = (eventType) => {
     inverted_circle: {
       icon: '🔄',
       name: 'Círculo Invertido',
-      description: 'Papel defiende Piedra, Tijera defiende Papel, Piedra defiende Tijera',
+      description: 'Piedra-Papel-Tijera clásico: Papel gana a Piedra, Tijera a Papel, Piedra a Tijera',
       requiredCards: 2
     },
     early_reveal: {

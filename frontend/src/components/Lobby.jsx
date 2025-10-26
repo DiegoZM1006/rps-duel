@@ -1,7 +1,9 @@
 import { useState } from 'react';
+import HelpModal from './HelpModal';
 
 function Lobby({ onJoin }) {
   const [name, setName] = useState('');
+  const [showHelp, setShowHelp] = useState(false);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -50,16 +52,29 @@ function Lobby({ onJoin }) {
           </button>
         </form>
 
-        <div className="mt-8 p-4 bg-game-accent rounded-lg">
-          <h3 className="text-white font-bold mb-2 text-sm">📋 Cómo jugar:</h3>
+        <div className="mt-6">
+          <button
+            onClick={() => setShowHelp(true)}
+            className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition flex items-center justify-center gap-2"
+          >
+            <span>📚</span>
+            <span>Cómo Jugar</span>
+          </button>
+        </div>
+
+        <div className="mt-6 p-4 bg-game-accent rounded-lg">
+          <h3 className="text-white font-bold mb-2 text-sm">⚡ Resumen Rápido:</h3>
           <ul className="text-gray-300 text-xs space-y-1">
             <li>• Primer jugador en llegar a 5 puntos gana</li>
             <li>• Atacante juega 2 cartas</li>
             <li>• Defensor debe igualar tipos para defender</li>
             <li>• Roles se intercambian cada ronda</li>
+            <li>• Cada partida tiene un evento especial único</li>
           </ul>
         </div>
       </div>
+
+      <HelpModal isOpen={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 }
