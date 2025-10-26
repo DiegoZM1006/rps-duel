@@ -51,6 +51,10 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
     }
     
     if (gameState.phase === 'defending') {
+      // Mensaje especial para EARLY_REVEAL
+      if (gameState.event === 'early_reveal' && !currentPlayer.is_attacker) {
+        return '👁️ Carta revelada! (+1 carta) - DEFIENDE';
+      }
       return !currentPlayer.is_attacker ? '🛡️ Tu turno: DEFIENDE' : '⏳ Esperando defensa...';
     }
     
@@ -111,9 +115,27 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
                   {opponent.is_attacker ? 'Atacando con:' : 'Defendiendo con:'}
                 </p>
                 <div className="flex justify-center gap-2">
-                  {(opponent.is_attacker ? gameState.attacker_cards : gameState.defender_cards).map(card => (
-                    <Card key={card.id} card={card} size="small" isDisabled={true} />
-                  ))}
+                  {opponent.is_attacker ? (
+                    // Si es EARLY_REVEAL y el oponente es atacante, mostrar solo la carta revelada
+                    gameState.event === 'early_reveal' && gameState.revealed_card && gameState.phase === 'defending' ? (
+                      <>
+                        <Card key={gameState.revealed_card.id} card={gameState.revealed_card} size="small" isDisabled={true} />
+                        <div className="w-16 h-20 bg-game-accent rounded flex items-center justify-center text-white text-xs">
+                          ?
+                        </div>
+                      </>
+                    ) : (
+                      // Mostrar todas las cartas en otros casos
+                      gameState.attacker_cards.map(card => (
+                        <Card key={card.id} card={card} size="small" isDisabled={true} />
+                      ))
+                    )
+                  ) : (
+                    // Cartas del defensor siempre se muestran todas
+                    gameState.defender_cards.map(card => (
+                      <Card key={card.id} card={card} size="small" isDisabled={true} />
+                    ))
+                  )}
                 </div>
               </div>
             )}
@@ -134,9 +156,20 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
                   <div className="text-center">
                     <p className="text-gray-400 text-sm mb-2">Ataque</p>
                     <div className="flex gap-2">
-                      {gameState.attacker_cards.map(card => (
-                        <Card key={card.id} card={card} size="normal" isDisabled={true} />
-                      ))}
+                      {gameState.event === 'early_reveal' && gameState.revealed_card && gameState.phase === 'defending' ? (
+                        // Durante EARLY_REVEAL en fase defending, mostrar solo la carta revelada
+                        <>
+                          <Card key={gameState.revealed_card.id} card={gameState.revealed_card} size="normal" isDisabled={true} />
+                          <div className="w-20 h-28 bg-game-accent rounded flex items-center justify-center text-white text-2xl">
+                            ?
+                          </div>
+                        </>
+                      ) : (
+                        // En otras fases o eventos, mostrar todas las cartas
+                        gameState.attacker_cards.map(card => (
+                          <Card key={card.id} card={card} size="normal" isDisabled={true} />
+                        ))
+                      )}
                     </div>
                   </div>
                   
@@ -174,6 +207,38 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
               🎮 {playerName} (Tú)
             </h2>
             <ScoreBoard score={currentPlayer.score} maxScore={5} isPlayer={true} />
+
+            {/* Cartas jugadas por el jugador actual */}
+            {gameState.phase !== 'attacking' && (
+              <div className="mt-4">
+                <p className="text-white text-sm mb-2 text-center">
+                  {currentPlayer.is_attacker ? 'Tus cartas de ataque:' : 'Tus cartas de defensa:'}
+                </p>
+                <div className="flex justify-center gap-2">
+                  {currentPlayer.is_attacker ? (
+                    // Si soy atacante con EARLY_REVEAL en fase defending, mostrar solo la carta revelada
+                    gameState.event === 'early_reveal' && gameState.revealed_card && gameState.phase === 'defending' ? (
+                      <>
+                        <Card key={gameState.revealed_card.id} card={gameState.revealed_card} size="small" isDisabled={true} />
+                        <div className="w-16 h-20 bg-game-accent rounded flex items-center justify-center text-white text-xs">
+                          Oculta
+                        </div>
+                      </>
+                    ) : (
+                      // Mostrar todas las cartas en otros casos
+                      gameState.attacker_cards.map(card => (
+                        <Card key={card.id} card={card} size="small" isDisabled={true} />
+                      ))
+                    )
+                  ) : (
+                    // Cartas del defensor siempre se muestran todas
+                    gameState.defender_cards.map(card => (
+                      <Card key={card.id} card={card} size="small" isDisabled={true} />
+                    ))
+                  )}
+                </div>
+              </div>
+            )}
 
             {/* Player Hand */}
             <div className="mt-6">

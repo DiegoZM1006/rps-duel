@@ -68,7 +68,7 @@ class GameManager:
             game_id=game_id,
             players=[player1, player2],
             # event=self.select_random_event(),
-            event=EventType.TRIO_SHOCK,
+            event=EventType.EARLY_REVEAL,
             phase="attacking"
         )
         
@@ -101,7 +101,19 @@ class GameManager:
         if len(cards) != required_cards:
             return False
         
-        game.attacker_cards = cards
+        # Early Reveal: revelar solo la primera carta
+        if game.event == EventType.EARLY_REVEAL:
+            game.revealed_card = cards[0]  # Solo la primera carta
+            game.attacker_cards = cards  # Guardar todas pero no mostrar todavía
+            
+            # Dar carta extra al defensor
+            defender = next(p for p in game.players if not p.is_attacker)
+            deck = self._game_decks.get(game_id, [])
+            if len(deck) > 0:
+                defender.hand.extend(self.draw_cards(deck, 1))
+        else:
+            game.attacker_cards = cards
+        
         # Remover cartas de la mano
         attacker.hand = [c for c in attacker.hand if c.id not in card_ids]
         game.phase = "defending"
@@ -236,9 +248,10 @@ class GameManager:
             if needed > 0 and len(deck) >= needed:
                 player.hand.extend(self.draw_cards(deck, needed))
         
-        # Reset cartas jugadas
+        # Reset cartas jugadas y reveladas
         game.attacker_cards = []
         game.defender_cards = []
+        game.revealed_card = None  # Resetear carta revelada
         game.current_round += 1
         game.phase = "attacking"
     

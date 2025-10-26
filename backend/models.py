@@ -16,7 +16,7 @@ class CardType(str, Enum):
 class EventType(str, Enum):
     TRIO_SHOCK = "trio_shock" # Sirve
     INVERTED_CIRCLE = "inverted_circle" # No sirve
-    EARLY_REVEAL = "early_reveal" # No sirve
+    EARLY_REVEAL = "early_reveal" # Sirve
     DEFENSE_WALL = "defense_wall" # Sirve
     ATTACK_PRESSURE = "attack_pressure" #   Sirve
     RECYCLE = "recycle" # Sirve
@@ -39,8 +39,9 @@ class GameState(BaseModel):
     current_round: int = 0
     attacker_cards: List[Card] = []
     defender_cards: List[Card] = []
-    phase: str = "waiting"  # waiting, attacking, defending, resolving
+    phase: str = "waiting"  # waiting, attacking, defending, resolving, early_reveal
     winner: Optional[str] = None
+    revealed_card: Optional[Card] = None  # Para EARLY_REVEAL: primera carta mostrada
 
 class PlayCardsRequest(BaseModel):
     player_id: str
