@@ -14,9 +14,9 @@ class CardType(str, Enum):
 # Tambien debuguear que los jokers de defensa no aparezca en ATAQUE y viceversa
 # Instanteaneas no sirven
 class EventType(str, Enum):
-    TRIO_SHOCK = "trio_shock" # No sirve
+    TRIO_SHOCK = "trio_shock" # Sirve
     INVERTED_CIRCLE = "inverted_circle" # No sirve
-    EARLY_REVEAL = "early_reveal"
+    EARLY_REVEAL = "early_reveal" # No sirve
     DEFENSE_WALL = "defense_wall" # Sirve
     ATTACK_PRESSURE = "attack_pressure" #   Sirve
     RECYCLE = "recycle" # Sirve

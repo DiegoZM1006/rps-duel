@@ -14,7 +14,7 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
   const isMyTurn = (gameState.phase === 'attacking' && currentPlayer.is_attacker) ||
                    (gameState.phase === 'defending' && !currentPlayer.is_attacker);
   
-  const requiredCards = 2; // TODO: Cambiar a 3 si evento es Trío de Choque
+  const requiredCards = gameState.event === 'trio_shock' ? 3 : 2;
 
   const handleCardClick = (card) => {
     if (!isMyTurn || isFinished) return;

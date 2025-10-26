@@ -67,7 +67,8 @@ class GameManager:
         game = GameState(
             game_id=game_id,
             players=[player1, player2],
-            event=self.select_random_event(),
+            # event=self.select_random_event(),
+            event=EventType.TRIO_SHOCK,
             phase="attacking"
         )
         
@@ -92,9 +93,12 @@ class GameManager:
         if not attacker:
             return False
         
+        # Determinar cuántas cartas se requieren según el evento
+        required_cards = 3 if game.event == EventType.TRIO_SHOCK else 2
+        
         # Verificar que tenga las cartas
         cards = [c for c in attacker.hand if c.id in card_ids]
-        if len(cards) != 2:
+        if len(cards) != required_cards:
             return False
         
         game.attacker_cards = cards
@@ -114,8 +118,11 @@ class GameManager:
         if not defender:
             return False
         
+        # Determinar cuántas cartas se requieren según el evento
+        required_cards = 3 if game.event == EventType.TRIO_SHOCK else 2
+        
         cards = [c for c in defender.hand if c.id in card_ids]
-        if len(cards) != 2:
+        if len(cards) != required_cards:
             return False
         
         game.defender_cards = cards
@@ -141,18 +148,29 @@ class GameManager:
                     matches += 1
                     break
         
-        # Calcular puntos
+        # Calcular puntos según el número total de cartas jugadas
+        total_cards = len(game.attacker_cards)
         points = 0
-        if matches == 0:
-            points = 2
-        elif matches == 1:
-            points = 1
-        # matches == 2 → 0 puntos
+        
+        if total_cards == 3:  # TRIO_SHOCK
+            if matches == 0:
+                points = 3
+            elif matches == 1:
+                points = 2
+            elif matches == 2:
+                points = 1
+            # matches == 3 → 0 puntos
+        else:  # Juego normal (2 cartas)
+            if matches == 0:
+                points = 2
+            elif matches == 1:
+                points = 1
+            # matches == 2 → 0 puntos
         
         # Aplicar evento especial
         if game.event == EventType.ATTACK_PRESSURE and matches == 0:
-            points = 3
-        elif game.event == EventType.DEFENSE_WALL and matches == 2:
+            points = 3 if total_cards == 2 else 4  # Bonus extra en TRIO_SHOCK
+        elif game.event == EventType.DEFENSE_WALL and matches == total_cards:
             defender.score += 1
         
         attacker.score += points
