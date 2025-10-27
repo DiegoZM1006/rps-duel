@@ -93,8 +93,8 @@ class GameManager:
         game = GameState(
             game_id=game_id,
             players=[player1, player2],
-            # event=self.select_random_event(),
-            event=EventType.EARLY_REVEAL,
+            event=self.select_random_event(),
+            # event=EventType.RECYCLE,
             phase="attacking"
         )
         
