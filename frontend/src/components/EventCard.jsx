@@ -8,7 +8,7 @@ function EventCard({ event }) {
     inverted_circle: {
       icon: '🔄',
       name: 'Círculo Invertido',
-      description: 'Papel defiende Piedra, Tijera defiende Papel, Piedra defiende Tijera'
+      description: 'Arquero defiende a Gerrero, Asesino vence a Arquero y Guerrero a Asesino'
     },
     early_reveal: {
       icon: '👁️',

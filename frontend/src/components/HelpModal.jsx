@@ -7,7 +7,7 @@ function HelpModal({ isOpen, onClose }) {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
-  <div className="bg-game-card rounded-xl shadow-2xl max-w-4xl w-full max-h-[96vh] overflow-hidden border-2 border-game-accent flex flex-col">
+      <div className="bg-game-card rounded-xl shadow-2xl max-w-4xl w-full max-h-[96vh] overflow-hidden border-2 border-game-accent flex flex-col">
         <div className="bg-game-accent p-4 flex justify-between items-center border-b-2 border-game-highlight">
           <h2 className="text-2xl font-bold text-white">📚 Guía del Juego</h2>
           <button
@@ -113,11 +113,11 @@ function RulesTab() {
 
 function CardsTab() {
   const cards = [
-    { icon: '⚔️', name: 'Guerrero', type: 'Básica', description: 'Unidad cuerpo a cuerpo resistente.', quantity: '12 en el mazo' },
-    { icon: '🏹', name: 'Arquero', type: 'Básica', description: 'Unidad de rango con precisión.', quantity: '12 en el mazo' },
-    { icon: '🗡️', name: 'Asesino', type: 'Básica', description: 'Unidad ágil y letal.', quantity: '12 en el mazo' },
-    { icon: '👹', name: 'Joker de Ataque', type: 'Especial', description: 'Solo para ATACANTES. Muy poderoso.', quantity: '2 en el mazo', highlight: true },
-    { icon: '🛡️', name: 'Joker de Defensa', type: 'Especial', description: 'Solo para DEFENSORES. Defiende todo.', quantity: '2 en el mazo', highlight: true }
+    { icon: '⚔️', name: 'Guerrero', type: 'Básica', description: 'Unidad cuerpo a cuerpo resistente.', quantity: '48 en el mazo' },
+    { icon: '🏹', name: 'Arquero', type: 'Básica', description: 'Unidad de rango con precisión.', quantity: '48 en el mazo' },
+    { icon: '🗡️', name: 'Asesino', type: 'Básica', description: 'Unidad ágil y letal.', quantity: '48 en el mazo' },
+    { icon: '👹', name: 'Joker de Ataque', type: 'Especial', description: 'Solo para ATACANTES. Muy poderoso.', quantity: '8 en el mazo', highlight: true },
+    { icon: '🛡️', name: 'Joker de Defensa', type: 'Especial', description: 'Solo para DEFENSORES. Defiende todo.', quantity: '8 en el mazo', highlight: true }
   ];
 
   return (
