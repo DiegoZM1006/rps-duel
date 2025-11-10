@@ -217,23 +217,15 @@ class GameManager:
         game.defender_cards = cards
         defender.hand = [c for c in defender.hand if c.id not in card_ids]
         
-        # Verificar si algún jugador tiene cartas instantáneas que puede usar
-        has_instant_cards = any(
-            any(c.type.startswith("instant_") for c in p.hand)
-            for p in game.players
-        )
-        
-        # Si hay cartas instantáneas disponibles, ir a fase de instantáneas
-        game.phase = "instant" if has_instant_cards else "resolving"
-        game.instant_played = False
-        game.last_instant_card = None
+        # Cambiar a fase de mostrar resultados
+        game.phase = "showing_result"
         
         return True
     
     def resolve_round(self, game_id: str) -> dict:
         """Resuelve la ronda y calcula puntos"""
         game = self.games.get(game_id)
-        if not game or game.phase != "resolving":
+        if not game or game.phase != "showing_result":
             return {"error": "Invalid phase"}
         
         attacker = next(p for p in game.players if p.is_attacker)
@@ -281,6 +273,23 @@ class GameManager:
         
         attacker.score += points
         
+        # Guardar resultado de la ronda en el estado del juego
+        result = {
+            "points": points,
+            "matches": matches,
+            "attacker_id": attacker.id,
+            "attacker_name": attacker.name,
+            "attacker_score": attacker.score,
+            "defender_id": defender.id,
+            "defender_name": defender.name,
+            "defender_score": defender.score,
+            "attacker_cards": [c.model_dump() for c in game.attacker_cards],
+            "defender_cards": [c.model_dump() for c in game.defender_cards],
+            "winner": game.winner
+        }
+        
+        game.round_result = result
+        
         # Verificar ganador
         if attacker.score >= 5:
             game.winner = attacker.id
@@ -288,151 +297,26 @@ class GameManager:
         elif defender.score >= 5:
             game.winner = defender.id
             game.phase = "finished"
-        else:
-            # Preparar siguiente ronda
-            self._prepare_next_round(game_id)
         
-        return {
-            "points": points,
-            "matches": matches,
-            "attacker_score": attacker.score,
-            "defender_score": defender.score,
-            "winner": game.winner
-        }
+        return result
     
-    def vote_skip_instant_phase(self, game_id: str, player_id: str) -> bool:
-        """Registra el voto de un jugador para omitir la fase de instantáneas"""
+    def continue_to_next_round(self, game_id: str, player_id: str) -> bool:
+        """Registra que un jugador está listo para continuar a la siguiente ronda"""
         game = self.games.get(game_id)
-        if not game or game.phase != "instant":
+        if not game or game.phase != "showing_result":
             return False
-
-        # Si el jugador ya votó, ignorar
-        if player_id in game.skip_votes:
-            return False
-
-        # Añadir el voto
-        game.skip_votes.append(player_id)
-
-        # Si todos los jugadores votaron, pasar a fase de resolución
-        if len(game.skip_votes) >= len(game.players):
-            game.phase = "resolving"
-            game.skip_votes = []  # Limpiar votos para la próxima ronda
+        
+        # Añadir voto del jugador si no ha votado
+        if player_id not in game.continue_votes:
+            game.continue_votes.append(player_id)
+        
+        # Si ambos jugadores votaron, preparar siguiente ronda
+        if len(game.continue_votes) >= 2:
+            self._prepare_next_round(game_id)
             return True
-
-        return True  # Voto registrado exitosamente
-
-    def can_play_instant(self, game_id: str, player_id: str, card_id: str) -> bool:
-        """Verifica si un jugador puede jugar una carta instantánea"""
-        game = self.games.get(game_id)
-        if not game or game.phase not in ["defending", "instant"]:
-            return False
-            
-        player = next((p for p in game.players if p.id == player_id), None)
-        if not player:
-            return False
-            
-        card = next((c for c in player.hand if c.id == card_id), None)
-        if not card or not card.type.startswith("instant_"):
-            return False
-            
-        # Verificar roles específicos
-        if card.type == CardType.INSTANT_CHANGE and not player.is_attacker:
-            return False
-        if card.type == CardType.INSTANT_REASSIGN and player.is_attacker:
-            return False
-            
-        # INSTANT_CANCEL solo se puede jugar si hay una carta instantánea previa
-        if card.type == CardType.INSTANT_CANCEL and not game.last_instant_card:
-            return False
-            
-        return True
-
-    def play_instant(self, game_id: str, player_id: str, card_id: str, target_card_id: Optional[str] = None) -> bool:
-        """Juega una carta instantánea"""
-        if not self.can_play_instant(game_id, player_id, card_id):
-            return False
-            
-        game = self.games.get(game_id)
-        player = next(p for p in game.players if p.id == player_id)
-        card = next(c for c in player.hand if c.id == card_id)
-        
-        # Procesar efectos según el tipo de carta
-        if card.type == CardType.INSTANT_CHANGE:
-            if not target_card_id or not game.attacker_cards:
-                return False
-            # Cambiar una carta de ataque por una de la mano
-            new_card = next((c for c in player.hand if c.id == target_card_id), None)
-            if not new_card:
-                return False
-            old_card = next((c for c in game.attacker_cards), None)
-            if not old_card:
-                return False
-            game.attacker_cards.remove(old_card)
-            game.attacker_cards.append(new_card)
-            player.hand.remove(new_card)
-            player.hand.append(old_card)
-            
-        elif card.type == CardType.INSTANT_REASSIGN and game.defender_cards:
-            # Reasignar defensas (intercambiar posiciones)
-            if len(game.defender_cards) >= 2:
-                game.defender_cards[0], game.defender_cards[1] = game.defender_cards[1], game.defender_cards[0]
-                
-        elif card.type == CardType.INSTANT_CANCEL:
-            if game.last_instant_card:
-                # Revertir el efecto de la última carta instantánea
-                self._revert_instant_effect(game)
-                
-        elif card.type == CardType.INSTANT_DRAW:
-            # Robar una carta nueva
-            deck = self._game_decks.get(game_id, [])
-            if deck:
-                new_cards = self.draw_cards_for_player(deck, 1, player.is_attacker)
-                if new_cards:
-                    player.hand.append(new_cards[0])
-                    # Actualizar contador del mazo
-                    game.deck_count = self.count_deck_cards(deck)
-        
-        # Remover la carta instantánea jugada de la mano
-        player.hand = [c for c in player.hand if c.id != card_id]
-        game.last_instant_card = card
-        game.instant_played = True
-        
-        # Verificar si aún hay cartas instantáneas que se pueden jugar
-        can_play_more_instants = any(
-            self.can_play_instant(game_id, p.id, c.id)
-            for p in game.players
-            for c in p.hand
-        )
-        
-        # Si no se pueden jugar más instantáneas, pasar a resolving
-        game.phase = "instant" if can_play_more_instants else "resolving"
         
         return True
-
-    def _revert_instant_effect(self, game: GameState):
-        """Revierte el efecto de la última carta instantánea jugada"""
-        if not game.last_instant_card:
-            return
-            
-        if game.last_instant_card.type == CardType.INSTANT_CHANGE:
-            # Revertir el cambio de cartas
-            if game.attacker_cards:
-                attacker = next(p for p in game.players if p.is_attacker)
-                changed_card = game.attacker_cards[-1]
-                original_card = attacker.hand[-1]
-                game.attacker_cards[-1] = original_card
-                attacker.hand[-1] = changed_card
-                
-        elif game.last_instant_card.type == CardType.INSTANT_REASSIGN:
-            # Revertir el reordenamiento de defensas
-            if len(game.defender_cards) >= 2:
-                game.defender_cards[0], game.defender_cards[1] = game.defender_cards[1], game.defender_cards[0]
-                
-        elif game.last_instant_card.type == CardType.INSTANT_DRAW:
-            # Remover la última carta robada
-            affected_player = next(p for p in game.players if len(p.hand) > 0)
-            affected_player.hand.pop()
-
+    
     def _can_defend(self, attack_card: Card, defense_card: Card, event: Optional[EventType]) -> bool:
         """Verifica si una carta puede defender otra"""
         # Joker de defensa defiende todo
@@ -484,11 +368,14 @@ class GameManager:
         # Reset cartas jugadas y reveladas
         game.attacker_cards = []
         game.defender_cards = []
-        game.revealed_card = None  # Resetear carta revelada
-        game.skip_votes = []  # Resetear votos para omitir fase
-        game.instant_played = False  # Resetear estado de instantánea
-        game.last_instant_card = None  # Resetear última carta instantánea
+        game.revealed_card = None
+        game.round_result = None
+        game.continue_votes = []
         game.current_round += 1
+        
+        # Nuevo evento para la siguiente ronda
+        game.event = self.select_random_event()
+        
         game.phase = "attacking"
     
     def delete_game(self, game_id: str):

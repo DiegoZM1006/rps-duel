@@ -18,9 +18,9 @@ export const canDefend = (attackCard, defenseCard, event = null) => {
   // La defensa debe GANAR al ataque (no igualar)
   if (event === 'inverted_circle') {
     const winningDefense = {
-      rock: 'paper',      // PAPEL le gana a PIEDRA
-      paper: 'scissors',  // TIJERA le gana a PAPEL
-      scissors: 'rock'    // PIEDRA le gana a TIJERA
+      warrior: 'archer',    // ARQUERO le gana a GUERRERO
+      archer: 'assassin',   // ASESINO le gana a ARQUERO
+      assassin: 'warrior'   // GUERRERO le gana a ASESINO
     };
     return defenseCard.type === winningDefense[attackCard.type];
   }
@@ -84,13 +84,11 @@ export const defenderGetsBonus = (defendedCount, totalAttacks, event = null) => 
  */
 export const getCardName = (cardType) => {
   const cardNames = {
-    rock: 'Piedra',
-    paper: 'Papel',
-    scissors: 'Tijera',
+    warrior: 'Guerrero',
+    archer: 'Arquero',
+    assassin: 'Asesino',
     joker_attack: 'Joker de Ataque',
-    joker_defense: 'Joker de Defensa',
-    instant_change: 'Cambio Relámpago',
-    instant_cancel: 'Anular'
+    joker_defense: 'Joker de Defensa'
   };
   return cardNames[cardType] || cardType;
 };
@@ -100,13 +98,11 @@ export const getCardName = (cardType) => {
  */
 export const getCardIcon = (cardType) => {
   const cardIcons = {
-    rock: '🪨',
-    paper: '📄',
-    scissors: '✂️',
-    joker_attack: '⚔️',
-    joker_defense: '🛡️',
-    instant_change: '⚡',
-    instant_cancel: '🚫'
+    warrior: '⚔️',
+    archer: '🏹',
+    assassin: '🗡️',
+    joker_attack: '👑',
+    joker_defense: '🛡️'
   };
   return cardIcons[cardType] || '🎴';
 };
@@ -125,7 +121,7 @@ export const getEventInfo = (eventType) => {
     inverted_circle: {
       icon: '🔄',
       name: 'Círculo Invertido',
-      description: 'Piedra-Papel-Tijera clásico: Papel gana a Piedra, Tijera a Papel, Piedra a Tijera',
+      description: 'Guerrero > Asesino > Arquero > Guerrero',
       requiredCards: 2
     },
     early_reveal: {
@@ -180,35 +176,15 @@ export const isHandPlayable = (hand, requiredCards) => {
 };
 
 /**
- * Filtra cartas instantáneas de la mano
- */
-export const getInstantCards = (hand) => {
-  return hand.filter(card => 
-    card.type === 'instant_change' || card.type === 'instant_cancel'
-  );
-};
-
-/**
- * Filtra cartas normales (no instantáneas) de la mano
- */
-export const getNormalCards = (hand) => {
-  return hand.filter(card => 
-    card.type !== 'instant_change' && card.type !== 'instant_cancel'
-  );
-};
-
-/**
  * Determina el color del gradiente para cada tipo de carta
  */
 export const getCardGradient = (cardType) => {
   const gradients = {
-    rock: 'from-gray-600 to-gray-800',
-    paper: 'from-blue-600 to-blue-800',
-    scissors: 'from-red-600 to-red-800',
-    joker_attack: 'from-purple-600 to-purple-900',
-    joker_defense: 'from-green-600 to-green-900',
-    instant_change: 'from-yellow-600 to-yellow-800',
-    instant_cancel: 'from-orange-600 to-orange-800'
+    warrior: 'from-red-600 to-red-800',
+    archer: 'from-blue-600 to-blue-800',
+    assassin: 'from-purple-600 to-purple-800',
+    joker_attack: 'from-orange-600 to-orange-900',
+    joker_defense: 'from-green-600 to-green-900'
   };
   return gradients[cardType] || 'from-gray-500 to-gray-700';
 };
@@ -270,8 +246,6 @@ export default {
   getEventInfo,
   getRequiredCards,
   isHandPlayable,
-  getInstantCards,
-  getNormalCards,
   getCardGradient,
   getRoundResultMessage,
   checkWinner,

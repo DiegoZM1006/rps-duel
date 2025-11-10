@@ -19,7 +19,7 @@ function App() {
     joinRoom,
     playAttack,
     playDefense,
-    playInstant
+    continueRound
   } = useWebSocket();
 
   const handleCreateRoom = (name) => {
@@ -93,7 +93,7 @@ function App() {
         playerName={playerName}
         onPlayAttack={playAttack}
         onPlayDefense={playDefense}
-        onPlayInstant={playInstant}
+        onContinueRound={continueRound}
         isFinished={status === 'finished'}
       />
     );
