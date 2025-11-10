@@ -23,8 +23,11 @@ export const useWebSocket = () => { // Ya no recibe playerName para autoconectar
     setError(null);
     setPlayerName(name); // Guardamos el nombre del jugador
     
-    // Usamos variables de entorno para la URL, con un fallback para desarrollo local
-    const backendHost = import.meta.env.VITE_BACKEND_HOST || '172.190.215.142:8080';
+  // Usamos variables de entorno para la URL. En despliegues detrás de nginx
+  // preferimos usar el mismo host/origen del navegador para que la ruta
+  // /ws/ sea proxied correctamente (evita tener que exponer puertos adicionales).
+  // Si se necesita apuntar a otro host, usar VITE_BACKEND_HOST.
+  const backendHost = import.meta.env.VITE_BACKEND_HOST || window.location.host;
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const wsUrl = `${protocol}://${backendHost}/ws/${encodeURIComponent(name)}`;
     console.log(`Conectando a: ${wsUrl}`);
