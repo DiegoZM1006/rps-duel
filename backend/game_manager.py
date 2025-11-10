@@ -25,11 +25,11 @@ class GameManager:
         
         # Cartas Instantáneas
         # 2 de cada tipo
-        for _ in range():
-            deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_CHANGE))
-            deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_REASSIGN))
-            deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_CANCEL))
-            deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_DRAW))
+        #for _ in range():
+        #    deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_CHANGE))
+        #    deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_REASSIGN))
+        #    deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_CANCEL))
+        #    deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_DRAW))
         
         random.shuffle(deck)
         return deck
