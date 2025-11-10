@@ -24,8 +24,8 @@ class GameManager:
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.JOKER_DEFENSE))
         
         # 2 Instantáneas
-        deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_CHANGE))
-        deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_CANCEL))
+        # deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_CHANGE))
+        # deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_CANCEL))
         
         random.shuffle(deck)
         return deck
