@@ -22,27 +22,37 @@ app.add_middleware(
 class ConnectionManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
-        self.player_to_game: Dict[str, str] = {}
-        self.waiting_player: Dict[str, dict] = {}
+        self.player_to_room: Dict[str, str] = {}
     
     async def connect(self, player_id: str, websocket: WebSocket):
         await websocket.accept()
         self.active_connections[player_id] = websocket
     
-    def disconnect(self, player_id: str):
+    async def disconnect(self, player_id: str):
+        room_id = self.player_to_room.get(player_id)
         if player_id in self.active_connections:
             del self.active_connections[player_id]
-        if player_id in self.player_to_game:
-            game_id = self.player_to_game[player_id]
-            del self.player_to_game[player_id]
-            game_manager.delete_game(game_id)
+        if player_id in self.player_to_room:
+            del self.player_to_room[player_id]
+        
+        # Notificar al otro jugador si estaba en una sala o partida
+        if room_id:
+            await self.broadcast_to_room(room_id, {
+                "type": "player_disconnected",
+                "message": "El oponente se desconectó. La partida ha terminado."
+            })
+            room = game_manager.get_room(room_id)
+            if room and room.game_id:
+                game_manager.delete_game(room.game_id)
     
     async def send_personal_message(self, message: dict, player_id: str):
         if player_id in self.active_connections:
             await self.active_connections[player_id].send_json(message)
     
-    async def broadcast_to_game(self, game_id: str, message: dict):
-        players = [pid for pid, gid in self.player_to_game.items() if gid == game_id]
+    async def broadcast_to_room(self, room_id: str, message: dict):
+        room = game_manager.get_room(room_id)
+        if not room: return
+        players = [p.id for p in room.players]
         for player_id in players:
             await self.send_personal_message(message, player_id)
 
@@ -65,67 +75,68 @@ async def websocket_endpoint(websocket: WebSocket, player_name: str):
             "player_name": player_name
         }, player_id)
         
-        # Intentar emparejar con jugador en espera
-        if manager.waiting_player:
-            # Hay alguien esperando
-            other_id, other_data = list(manager.waiting_player.items())[0]
-            del manager.waiting_player[other_id]
-            
-            # Crear partida
-            game = game_manager.create_game(
-                other_id, other_data["name"],
-                player_id, player_name
-            )
-            
-            manager.player_to_game[other_id] = game.game_id
-            manager.player_to_game[player_id] = game.game_id
-            
-            # Notificar a ambos jugadores
-            await manager.broadcast_to_game(game.game_id, {
-                "type": "game_start",
-                "game": game.model_dump()
-            })
-        else:
-            # Poner en espera
-            manager.waiting_player[player_id] = {"name": player_name}
-            await manager.send_personal_message({
-                "type": "waiting",
-                "message": "Esperando oponente..."
-            }, player_id)
-        
         # Escuchar mensajes
         while True:
             data = await websocket.receive_json()
-            await handle_game_action(player_id, data)
+            await handle_game_action(player_id, player_name, data)
             
     except WebSocketDisconnect:
-        manager.disconnect(player_id)
-        # Notificar al otro jugador si estaba en partida
-        if player_id in manager.player_to_game:
-            game_id = manager.player_to_game[player_id]
-            await manager.broadcast_to_game(game_id, {
-                "type": "player_disconnected",
-                "message": "El oponente se desconectó"
-            })
+        await manager.disconnect(player_id)
 
-async def handle_game_action(player_id: str, data: dict):
+async def handle_game_action(player_id: str, player_name: str, data: dict):
     """Maneja acciones del juego"""
     action = data.get("action")
-    game_id = manager.player_to_game.get(player_id)
-    
-    if not game_id:
+
+    if action == "create_room":
+        room = game_manager.create_room(player_id, player_name)
+        manager.player_to_room[player_id] = room.room_id
+        await manager.send_personal_message({
+            "type": "room_created",
+            "room": room.model_dump()
+        }, player_id)
         return
-    
+
+    if action == "join_room":
+        room_id = data.get("room_id", "").upper()
+        room = game_manager.join_room(room_id, player_id, player_name)
+        if room:
+            manager.player_to_room[player_id] = room.room_id
+            await manager.broadcast_to_room(room.room_id, {
+                "type": "player_joined",
+                "room": room.model_dump()
+            })
+            # Si la sala está llena, iniciar la partida
+            if len(room.players) == 2:
+                game = game_manager.start_game_in_room(room.room_id)
+                if game:
+                    await manager.broadcast_to_room(room.room_id, {
+                        "type": "game_start",
+                        "game": game.model_dump()
+                    })
+        else:
+            await manager.send_personal_message({
+                "type": "error",
+                "message": "La sala no existe o está llena."
+            }, player_id)
+        return
+
+    # Acciones dentro de una partida
+    room_id = manager.player_to_room.get(player_id)
+    if not room_id: return
+
+    room = game_manager.get_room(room_id)
+    if not room or not room.game_id: return
+
+    game_id = room.game_id
     game = game_manager.get_game(game_id)
-    if not game:
-        return
+    if not game: return
     
     if action == "play_attack":
         card_ids = data.get("card_ids", [])
         success = game_manager.play_attack(game_id, player_id, card_ids)
         
         if success:
-            await manager.broadcast_to_game(game_id, {
+            await manager.broadcast_to_room(room_id, {
                 "type": "attack_played",
                 "game": game.model_dump()
             })
@@ -139,16 +150,43 @@ async def handle_game_action(player_id: str, data: dict):
             result = game_manager.resolve_round(game_id)
             game = game_manager.get_game(game_id)
             
-            await manager.broadcast_to_game(game_id, {
+            await manager.broadcast_to_room(room_id, {
                 "type": "round_resolved",
                 "result": result,
                 "game": game.model_dump()
             })
     
     elif action == "play_instant":
-        card_id = data.get("card_id")
-        # TODO: Implementar lógica de instantáneas
-        pass
+        if data.get("card_id") == "skip":
+            success = game_manager.vote_skip_instant_phase(game_id, player_id)
+            if success:
+                game = game_manager.get_game(game_id)
+                if game.phase == "resolving":
+                    result = game_manager.resolve_round(game_id)
+                    game = game_manager.get_game(game_id)
+                    await manager.broadcast_to_room(room_id, {
+                        "type": "round_resolved",
+                        "result": result,
+                        "game": game.model_dump()
+                    })
+                else:
+                    await manager.broadcast_to_room(room_id, {
+                        "type": "skip_vote_updated",
+                        "game": game.model_dump(),
+                        "votes": len(game.skip_votes),
+                        "required": len(game.players)
+                    })
+        else:
+            card_id = data.get("card_id")
+            target_card_id = data.get("target_card_id")
+            success = game_manager.play_instant(game_id, player_id, card_id, target_card_id)
+            
+            if success:
+                game = game_manager.get_game(game_id)
+                await manager.broadcast_to_room(room_id, {
+                    "type": "instant_played",
+                    "game": game.model_dump()
+                })
     
     elif action == "get_game_state":
         game = game_manager.get_game(game_id)

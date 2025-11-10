@@ -4,28 +4,43 @@ import Lobby from './components/Lobby';
 import GameBoard from './components/GameBoard';
 
 function App() {
-  const [playerName, setPlayerName] = useState('');
-  const [hasJoined, setHasJoined] = useState(false);
+  // const [playerName, setPlayerName] = useState('');
+  // const [hasJoined, setHasJoined] = useState(false);
   
   const {
     isConnected,
     gameState,
     playerId,
+    playerName,
     status,
     error,
+    room,
+    createRoom,
+    joinRoom,
     playAttack,
     playDefense,
     playInstant
-  } = useWebSocket(hasJoined ? playerName : null);
+  } = useWebSocket();
 
-  const handleJoin = (name) => {
-    setPlayerName(name);
-    setHasJoined(true);
+  const handleCreateRoom = (name) => {
+    createRoom(name);
   };
 
-  if (!hasJoined) {
-    return <Lobby onJoin={handleJoin} />;
-  }
+  const handleJoinRoom = (name, code) => {
+    joinRoom(name, code);
+  };
+
+  if (!gameState && !room) {
+    return (
+      <Lobby
+        onCreateRoom={handleCreateRoom}
+        onJoinRoom={handleJoinRoom}
+        room={room} // Será null inicialmente
+        error={error}
+        playerId={playerId} // Será null inicialmente
+      />
+    );
+  }  
 
   if (error) {
     return (
@@ -44,7 +59,21 @@ function App() {
     );
   }
 
-  if (status === 'connecting') {
+  // Si está conectado pero no ha comenzado el juego (ej. en una sala esperando oponente)
+  if (room && !gameState) {
+    return (
+      <Lobby
+        onCreateRoom={handleCreateRoom} // Estas no se usarán si room está presente, pero por consistencia
+        onJoinRoom={handleJoinRoom}
+        room={room} // Pasamos el estado de la sala para mostrarlo
+        error={error}
+        playerId={playerId}
+      />
+    );
+  }
+
+  // Si el estado es 'connecting' (antes de que se establezca cualquier sala o juego)
+  if (status === 'connecting' && !room && !gameState) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-white text-center">
@@ -54,28 +83,8 @@ function App() {
       </div>
     );
   }
-
-  if (status === 'waiting') {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="bg-game-card p-12 rounded-lg shadow-2xl text-center max-w-md">
-          <div className="animate-pulse mb-6">
-            <div className="text-6xl mb-4">⏳</div>
-          </div>
-          <h2 className="text-3xl font-bold text-white mb-4">
-            Esperando oponente...
-          </h2>
-          <p className="text-gray-400">
-            Otro jugador debe unirse desde la misma red
-          </p>
-          <div className="mt-6 text-sm text-gray-500">
-            Tu nombre: <span className="text-game-highlight font-bold">{playerName}</span>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  
+  // Si existe el estado de juego, mostramos el GameBoard
   if (status === 'playing' || status === 'finished') {
     return (
       <GameBoard
@@ -90,7 +99,12 @@ function App() {
     );
   }
 
-  return null;
+  // Fallback para estados inesperados, quizás mostrar un mensaje de carga genérico o error
+  return (
+    <div className="min-h-screen flex items-center justify-center text-white">
+      <p>Cargando o estado inesperado...</p>
+    </div>
+  );
 }
 
 export default App;

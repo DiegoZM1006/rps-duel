@@ -6,7 +6,9 @@ function Card({ card, onClick, isSelected, isDisabled, size = 'normal' }) {
     joker_attack: '⚔️',
     joker_defense: '🛡️',
     instant_change: '⚡',
-    instant_cancel: '🚫'
+    instant_reassign: '🔄',
+    instant_cancel: '🚫',
+    instant_draw: '🎴'
   };
 
   const cardNames = {
@@ -16,7 +18,9 @@ function Card({ card, onClick, isSelected, isDisabled, size = 'normal' }) {
     joker_attack: 'J. Ataque',
     joker_defense: 'J. Defensa',
     instant_change: 'Cambio',
-    instant_cancel: 'Anular'
+    instant_reassign: 'Reasignar',
+    instant_cancel: 'Anular',
+    instant_draw: 'Robo+1'
   };
 
   const cardColors = {
@@ -26,7 +30,9 @@ function Card({ card, onClick, isSelected, isDisabled, size = 'normal' }) {
     joker_attack: 'from-purple-600 to-purple-900',
     joker_defense: 'from-green-600 to-green-900',
     instant_change: 'from-yellow-600 to-yellow-800',
-    instant_cancel: 'from-orange-600 to-orange-800'
+    instant_reassign: 'from-indigo-600 to-indigo-800',
+    instant_cancel: 'from-orange-600 to-orange-800',
+    instant_draw: 'from-emerald-600 to-emerald-800'
   };
 
   const sizeClasses = {

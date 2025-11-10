@@ -5,23 +5,45 @@ import ScoreBoard from './ScoreBoard';
 
 function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefense, onPlayInstant, isFinished }) {
   const [selectedCards, setSelectedCards] = useState([]);
+  const [hasVoted, setHasVoted] = useState(false);
   
   if (!gameState) return null;
+  
+  // Resetear el estado de voto cuando cambia la fase
+  useEffect(() => {
+    if (gameState.phase !== 'instant') {
+      setHasVoted(false);
+    }
+  }, [gameState.phase]);
 
   const currentPlayer = gameState.players.find(p => p.id === playerId);
   const opponent = gameState.players.find(p => p.id !== playerId);
   
   const isMyTurn = (gameState.phase === 'attacking' && currentPlayer.is_attacker) ||
-                   (gameState.phase === 'defending' && !currentPlayer.is_attacker);
+                   (gameState.phase === 'defending' && !currentPlayer.is_attacker) ||
+                   (gameState.phase === 'instant');
   
   const requiredCards = gameState.event === 'trio_shock' ? 3 : 2;
 
   const handleCardClick = (card) => {
     if (!isMyTurn || isFinished) return;
 
+    // En fase de instantáneas, solo permitir seleccionar cartas instantáneas
+    if (gameState.phase === 'instant' && !card.type.startsWith('instant_')) {
+      return;
+    }
+
+    // En fases normales, no permitir seleccionar cartas instantáneas
+    if (gameState.phase !== 'instant' && card.type.startsWith('instant_')) {
+      return;
+    }
+
     if (selectedCards.find(c => c.id === card.id)) {
       setSelectedCards(selectedCards.filter(c => c.id !== card.id));
-    } else if (selectedCards.length < requiredCards) {
+    } else if (
+      (gameState.phase === 'instant' && selectedCards.length < 1) || // Solo 1 carta en fase instantánea
+      (gameState.phase !== 'instant' && selectedCards.length < requiredCards) // requiredCards en fases normales
+    ) {
       setSelectedCards([...selectedCards, card]);
     }
   };
@@ -58,6 +80,10 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
       return !currentPlayer.is_attacker ? '🛡️ Tu turno: DEFIENDE' : '⏳ Esperando defensa...';
     }
     
+    if (gameState.phase === 'instant') {
+      return '⚡ Fase de Cartas Instantáneas';
+    }
+
     if (gameState.phase === 'resolving') {
       return '📊 Resolviendo ronda...';
     }
@@ -258,21 +284,61 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
               </div>
             </div>
 
-            {/* Action Button */}
+            {/* Action Buttons */}
             {isMyTurn && !isFinished && (
-              <button
-                onClick={handlePlayCards}
-                disabled={selectedCards.length !== requiredCards}
-                className={`
-                  w-full mt-6 py-3 rounded-lg font-bold text-white transition
-                  ${selectedCards.length === requiredCards
-                    ? 'bg-game-highlight hover:bg-red-600 cursor-pointer'
-                    : 'bg-gray-600 cursor-not-allowed opacity-50'}
-                `}
-              >
-                {currentPlayer.is_attacker ? '⚔️ ATACAR' : '🛡️ DEFENDER'}
-                {selectedCards.length > 0 && ` (${selectedCards.length}/${requiredCards})`}
-              </button>
+              <div className="mt-6 space-y-2">
+                {gameState.phase !== 'instant' ? (
+                  <button
+                    onClick={handlePlayCards}
+                    disabled={selectedCards.length !== requiredCards}
+                    className={`
+                      w-full py-3 rounded-lg font-bold text-white transition
+                      ${selectedCards.length === requiredCards
+                        ? 'bg-game-highlight hover:bg-red-600 cursor-pointer'
+                        : 'bg-gray-600 cursor-not-allowed opacity-50'}
+                    `}
+                  >
+                    {currentPlayer.is_attacker ? '⚔️ ATACAR' : '🛡️ DEFENDER'}
+                    {selectedCards.length > 0 && ` (${selectedCards.length}/${requiredCards})`}
+                  </button>
+                ) : (
+                  <>
+                    <button
+                      onClick={() => {
+                        if (selectedCards.length === 1) {
+                          onPlayInstant(selectedCards[0].id);
+                          setSelectedCards([]);
+                        }
+                      }}
+                      disabled={selectedCards.length !== 1}
+                      className={`
+                        w-full py-3 rounded-lg font-bold text-white transition
+                        ${selectedCards.length === 1
+                          ? 'bg-yellow-600 hover:bg-yellow-700 cursor-pointer'
+                          : 'bg-gray-600 cursor-not-allowed opacity-50'}
+                      `}
+                    >
+                      ⚡ USAR INSTANTÁNEA
+                    </button>
+                    <button
+                      onClick={() => {
+                        onPlayInstant('skip');
+                        setSelectedCards([]);
+                        setHasVoted(true);
+                      }}
+                      disabled={hasVoted || (gameState.skip_votes && gameState.skip_votes.includes(playerId))}
+                      className={`
+                        w-full py-3 rounded-lg font-bold text-white transition
+                        ${hasVoted || (gameState.skip_votes && gameState.skip_votes.includes(playerId))
+                          ? 'bg-gray-600 cursor-not-allowed opacity-50'
+                          : 'bg-gray-700 hover:bg-gray-800'}
+                      `}
+                    >
+                      OMITIR FASE ➡️ ({gameState.skip_votes.length}/{gameState.players.length})
+                    </button>
+                  </>
+                )}
+              </div>
             )}
           </div>
         </div>

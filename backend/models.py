@@ -8,11 +8,13 @@ class CardType(str, Enum):
     SCISSORS = "scissors"
     JOKER_ATTACK = "joker_attack"
     JOKER_DEFENSE = "joker_defense"
-    INSTANT_CHANGE = "instant_change"
-    INSTANT_CANCEL = "instant_cancel"
+    INSTANT_CHANGE = "instant_change"      # Cambio Relámpago (Atacante)
+    INSTANT_REASSIGN = "instant_reassign"  # Reasignar (Defensor)
+    INSTANT_CANCEL = "instant_cancel"      # Anular (Cualquiera)
+    INSTANT_DRAW = "instant_draw"          # Robo+1 (Cualquiera)
 
 # Jokers filtrados por rol: Joker de ataque solo para atacantes, Joker de defensa solo para defensores
-# Instanteaneas no sirven
+# Instantáneas tienen roles específicos y fases de uso
 # TODO: REVISAR TODOS LOS EVENTOS
 class EventType(str, Enum):
     TRIO_SHOCK = "trio_shock" # Sirve 
@@ -40,9 +42,17 @@ class GameState(BaseModel):
     current_round: int = 0
     attacker_cards: List[Card] = []
     defender_cards: List[Card] = []
-    phase: str = "waiting"  # waiting, attacking, defending, resolving, early_reveal
+    phase: str = "waiting"  # waiting, attacking, defending, instant, resolving, early_reveal
+    instant_played: bool = False  # Para controlar si ya se jugó una carta instantánea en esta ronda
+    last_instant_card: Optional[Card] = None  # Para guardar la última carta instantánea jugada
+    skip_votes: List[str] = []  # Lista de IDs de jugadores que votaron para omitir
     winner: Optional[str] = None
     revealed_card: Optional[Card] = None  # Para EARLY_REVEAL: primera carta mostrada
+
+class Room(BaseModel):
+    room_id: str
+    players: List[Player] = []
+    game_id: Optional[str] = None
 
 class PlayCardsRequest(BaseModel):
     player_id: str

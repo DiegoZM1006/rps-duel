@@ -1,24 +1,33 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
-export const useWebSocket = (playerName) => {
+export const useWebSocket = () => { // Ya no recibe playerName para autoconectar
   const [isConnected, setIsConnected] = useState(false);
   const [gameState, setGameState] = useState(null);
+  const [room, setRoom] = useState(null); // Nuevo estado para la sala
   const [playerId, setPlayerId] = useState(null);
-  const [status, setStatus] = useState('disconnected'); // disconnected, connecting, waiting, playing, finished
+  const [playerName, setPlayerName] = useState(null); // Estado interno para el nombre
+  const [status, setStatus] = useState('disconnected'); // disconnected, connecting, connected, waiting_in_room, playing, finished
   const [error, setError] = useState(null);
   
   const ws = useRef(null);
   const reconnectTimeout = useRef(null);
+  const pendingAction = useRef(null); // Para guardar la acción a ejecutar tras la conexión
 
-  const connect = useCallback(() => {
-    if (ws.current?.readyState === WebSocket.OPEN) return;
+  const connect = useCallback((name) => {
+    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
+      console.log("WebSocket ya está conectado.");
+      return;
+    }
     
     setStatus('connecting');
+    setError(null);
+    setPlayerName(name); // Guardamos el nombre del jugador
     
-    // Detectar si estamos usando nginx o acceso directo
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.hostname;
-    const wsUrl = `${protocol}//${host}/ws/${encodeURIComponent(playerName)}`;
+    // Usamos variables de entorno para la URL, con un fallback para desarrollo local
+    const backendHost = import.meta.env.VITE_BACKEND_HOST || '127.0.0.1:8000';
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const wsUrl = `${protocol}://${backendHost}/ws/${encodeURIComponent(name)}`;
+    console.log(`Conectando a: ${wsUrl}`);
     
     ws.current = new WebSocket(wsUrl);
 
@@ -26,6 +35,12 @@ export const useWebSocket = (playerName) => {
       console.log('WebSocket conectado');
       setIsConnected(true);
       setError(null);
+      setStatus('connected'); // Estado intermedio: conectado pero no en sala/juego
+      // Si hay una acción pendiente, la ejecutamos ahora
+      if (pendingAction.current) {
+        sendMessage(pendingAction.current);
+        pendingAction.current = null; // Limpiamos la acción pendiente
+      }
     };
 
     ws.current.onmessage = (event) => {
@@ -35,14 +50,22 @@ export const useWebSocket = (playerName) => {
       switch (data.type) {
         case 'connected':
           setPlayerId(data.player_id);
+          // El nombre ya lo tenemos desde el input del lobby
           break;
           
-        case 'waiting':
-          setStatus('waiting');
+        case 'room_created':
+          setRoom(data.room);
+          setStatus('waiting_in_room');
+          break;
+
+        case 'player_joined':
+          setRoom(data.room);
+          setStatus('waiting_in_room');
           break;
           
         case 'game_start':
           setGameState(data.game);
+          setRoom(null); // Salimos de la sala para entrar al juego
           setStatus('playing');
           break;
           
@@ -63,7 +86,18 @@ export const useWebSocket = (playerName) => {
           
         case 'player_disconnected':
           setError(data.message);
-          setStatus('disconnected');
+          setGameState(prev => prev ? { ...prev, phase: 'finished' } : null);
+          setRoom(null);
+          setStatus('finished'); // Un estado final para mostrar el mensaje
+          break;
+
+        case 'skip_vote_updated':
+          setGameState(data.game);
+          break;
+
+        case 'error':
+          setError(data.message);
+          setStatus('error');
           break;
           
         default:
@@ -73,43 +107,41 @@ export const useWebSocket = (playerName) => {
 
     ws.current.onerror = (error) => {
       console.error('WebSocket error:', error);
-      setError('Error de conexión');
+      setError('Error de conexión con el servidor. Asegúrate de que el backend esté corriendo.');
+      setStatus('error');
     };
 
     ws.current.onclose = () => {
       console.log('WebSocket desconectado');
       setIsConnected(false);
-      setStatus('disconnected');
-      
-      // Intentar reconectar después de 3 segundos
-      reconnectTimeout.current = setTimeout(() => {
-        if (playerName) {
-          connect();
-        }
-      }, 3000);
+      // No intentamos reconectar automáticamente en un sistema de salas
+      // El usuario debe reiniciar la acción
+      if (status !== 'finished' && status !== 'error') {
+        setStatus('disconnected');
+      }
     };
-  }, [playerName]);
+  }, [status]); // Dependemos de status para evitar reconexiones no deseadas
 
   useEffect(() => {
-    if (playerName) {
-      connect();
-    }
-
+    // Limpieza al desmontar el componente
     return () => {
       if (reconnectTimeout.current) {
         clearTimeout(reconnectTimeout.current);
       }
-      if (ws.current) {
+      if (ws.current?.readyState === WebSocket.OPEN) {
+        console.log("Cerrando WebSocket al desmontar el componente.");
         ws.current.close();
       }
     };
-  }, [playerName, connect]);
+  }, []);
 
   const sendMessage = useCallback((data) => {
     if (ws.current?.readyState === WebSocket.OPEN) {
       ws.current.send(JSON.stringify(data));
     } else {
-      console.error('WebSocket no está conectado');
+      console.error('WebSocket no está conectado. No se puede enviar el mensaje:', data);
+      setError("No se pudo comunicar con el servidor. Intenta refrescar la página.");
+      setStatus('error');
     }
   }, []);
 
@@ -135,12 +167,29 @@ export const useWebSocket = (playerName) => {
     });
   }, [sendMessage]);
 
+  // Nuevas funciones para el sistema de salas
+  const createRoom = useCallback((name) => {
+    connect(name);
+    // Guardamos la acción para ejecutarla en onopen
+    pendingAction.current = { action: 'create_room' };
+  }, [connect, sendMessage]);
+
+  const joinRoom = useCallback((name, roomCode) => {
+    connect(name);
+    // Guardamos la acción para ejecutarla en onopen
+    pendingAction.current = { action: 'join_room', room_id: roomCode };
+  }, [connect, sendMessage]);
+
   return {
     isConnected,
     gameState,
+    room, // Exponer el estado de la sala
     playerId,
+    playerName, // Exponer el nombre del jugador
     status,
     error,
+    createRoom, // Exponer la función para crear sala
+    joinRoom, // Exponer la función para unirse a sala
     playAttack,
     playDefense,
     playInstant
