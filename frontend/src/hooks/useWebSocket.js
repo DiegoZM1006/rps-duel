@@ -24,7 +24,7 @@ export const useWebSocket = () => { // Ya no recibe playerName para autoconectar
     setPlayerName(name); // Guardamos el nombre del jugador
     
     // Usamos variables de entorno para la URL, con un fallback para desarrollo local
-    const backendHost = import.meta.env.VITE_BACKEND_HOST || '127.0.0.1:8000';
+    const backendHost = import.meta.env.VITE_BACKEND_HOST || '172.190.215.142:8080';
     const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
     const wsUrl = `${protocol}://${backendHost}/ws/${encodeURIComponent(name)}`;
     console.log(`Conectando a: ${wsUrl}`);
