@@ -6,7 +6,7 @@ function HelpModal({ isOpen, onClose }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50 overflow-auto">
       <div className="bg-game-card rounded-xl shadow-2xl max-w-4xl w-full max-h-[96vh] overflow-hidden border-2 border-game-accent flex flex-col">
         <div className="bg-game-accent p-4 flex justify-between items-center border-b-2 border-game-highlight">
           <h2 className="text-2xl font-bold text-white">📚 Guía del Juego</h2>
@@ -19,7 +19,7 @@ function HelpModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        <div className="p-6 flex gap-6">
+        <div className="p-6 flex gap-6 flex-1 overflow-hidden">
           <div className="w-56 flex-shrink-0 space-y-2">
             <button
               className={`w-full text-left px-3 py-2 rounded ${activeTab === 'rules' ? 'bg-game-accent text-white' : 'bg-game-bg text-gray-200'}`}
@@ -41,7 +41,7 @@ function HelpModal({ isOpen, onClose }) {
             </button>
           </div>
 
-          <div className="flex-1 overflow-auto max-h-[calc(100vh-6rem)]">
+          <div className="flex-1 overflow-auto max-h-full">
             <div className="space-y-4">
               {activeTab === 'rules' && <RulesTab />}
               {activeTab === 'cards' && <CardsTab />}
