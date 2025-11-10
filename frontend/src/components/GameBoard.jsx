@@ -145,7 +145,7 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
                     // Si es EARLY_REVEAL y el oponente es atacante, mostrar solo la carta revelada
                     gameState.event === 'early_reveal' && gameState.revealed_card && gameState.phase === 'defending' ? (
                       <>
-                        <Card key={gameState.revealed_card.id} card={gameState.revealed_card} size="small" isDisabled={true} />
+                        <Card key={gameState.revealed_card.id} card={gameState.revealed_card} size="small" isDisabled={true} deckCount={gameState.deck_count} />
                         <div className="w-16 h-20 bg-game-accent rounded flex items-center justify-center text-white text-xs">
                           ?
                         </div>
@@ -153,13 +153,13 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
                     ) : (
                       // Mostrar todas las cartas en otros casos
                       gameState.attacker_cards.map(card => (
-                        <Card key={card.id} card={card} size="small" isDisabled={true} />
+                        <Card key={card.id} card={card} size="small" isDisabled={true} deckCount={gameState.deck_count} />
                       ))
                     )
                   ) : (
                     // Cartas del defensor siempre se muestran todas
                     gameState.defender_cards.map(card => (
-                      <Card key={card.id} card={card} size="small" isDisabled={true} />
+                      <Card key={card.id} card={card} size="small" isDisabled={true} deckCount={gameState.deck_count} />
                     ))
                   )}
                 </div>
@@ -185,7 +185,7 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
                       {gameState.event === 'early_reveal' && gameState.revealed_card && gameState.phase === 'defending' ? (
                         // Durante EARLY_REVEAL en fase defending, mostrar solo la carta revelada
                         <>
-                          <Card key={gameState.revealed_card.id} card={gameState.revealed_card} size="normal" isDisabled={true} />
+                          <Card key={gameState.revealed_card.id} card={gameState.revealed_card} size="normal" isDisabled={true} deckCount={gameState.deck_count} />
                           <div className="w-20 h-28 bg-game-accent rounded flex items-center justify-center text-white text-2xl">
                             ?
                           </div>
@@ -193,7 +193,7 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
                       ) : (
                         // En otras fases o eventos, mostrar todas las cartas
                         gameState.attacker_cards.map(card => (
-                          <Card key={card.id} card={card} size="normal" isDisabled={true} />
+                          <Card key={card.id} card={card} size="normal" isDisabled={true} deckCount={gameState.deck_count} />
                         ))
                       )}
                     </div>
@@ -206,7 +206,7 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
                       <p className="text-gray-400 text-sm mb-2">Defensa</p>
                       <div className="flex gap-2">
                         {gameState.defender_cards.map(card => (
-                          <Card key={card.id} card={card} size="normal" isDisabled={true} />
+                          <Card key={card.id} card={card} size="normal" isDisabled={true} deckCount={gameState.deck_count} />
                         ))}
                       </div>
                     </div>
@@ -245,7 +245,7 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
                     // Si soy atacante con EARLY_REVEAL en fase defending, mostrar solo la carta revelada
                     gameState.event === 'early_reveal' && gameState.revealed_card && gameState.phase === 'defending' ? (
                       <>
-                        <Card key={gameState.revealed_card.id} card={gameState.revealed_card} size="small" isDisabled={true} />
+                        <Card key={gameState.revealed_card.id} card={gameState.revealed_card} size="small" isDisabled={true} deckCount={gameState.deck_count} />
                         <div className="w-16 h-20 bg-game-accent rounded flex items-center justify-center text-white text-xs">
                           Oculta
                         </div>
@@ -253,13 +253,13 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
                     ) : (
                       // Mostrar todas las cartas en otros casos
                       gameState.attacker_cards.map(card => (
-                        <Card key={card.id} card={card} size="small" isDisabled={true} />
+                        <Card key={card.id} card={card} size="small" isDisabled={true} deckCount={gameState.deck_count} />
                       ))
                     )
                   ) : (
                     // Cartas del defensor siempre se muestran todas
                     gameState.defender_cards.map(card => (
-                      <Card key={card.id} card={card} size="small" isDisabled={true} />
+                      <Card key={card.id} card={card} size="small" isDisabled={true} deckCount={gameState.deck_count} />
                     ))
                   )}
                 </div>
@@ -279,6 +279,7 @@ function GameBoard({ gameState, playerId, playerName, onPlayAttack, onPlayDefens
                     onClick={() => handleCardClick(card)}
                     isSelected={selectedCards.find(c => c.id === card.id)}
                     isDisabled={!isMyTurn || isFinished}
+                    deckCount={gameState.deck_count}
                   />
                 ))}
               </div>

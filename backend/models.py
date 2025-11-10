@@ -3,9 +3,9 @@ from typing import List, Optional
 from enum import Enum
 
 class CardType(str, Enum):
-    ROCK = "rock"
-    PAPER = "paper"
-    SCISSORS = "scissors"
+    WARRIOR = "warrior"      # Antes ROCK
+    ARCHER = "archer"        # Antes PAPER
+    ASSASSIN = "assassin"    # Antes SCISSORS
     JOKER_ATTACK = "joker_attack"
     JOKER_DEFENSE = "joker_defense"
     INSTANT_CHANGE = "instant_change"      # Cambio Relámpago (Atacante)
@@ -15,14 +15,13 @@ class CardType(str, Enum):
 
 # Jokers filtrados por rol: Joker de ataque solo para atacantes, Joker de defensa solo para defensores
 # Instantáneas tienen roles específicos y fases de uso
-# TODO: REVISAR TODOS LOS EVENTOS
 class EventType(str, Enum):
-    TRIO_SHOCK = "trio_shock" # Sirve 
-    INVERTED_CIRCLE = "inverted_circle" # Sirve - Piedra, Papel, Tijera clásico
-    EARLY_REVEAL = "early_reveal" # Sirve
-    DEFENSE_WALL = "defense_wall" # Sirve
-    ATTACK_PRESSURE = "attack_pressure" #   Sirve
-    RECYCLE = "recycle" # Sirve
+    TRIO_SHOCK = "trio_shock"
+    INVERTED_CIRCLE = "inverted_circle"  # Guerrero > Asesino > Arquero > Guerrero
+    EARLY_REVEAL = "early_reveal"
+    DEFENSE_WALL = "defense_wall"
+    ATTACK_PRESSURE = "attack_pressure"
+    RECYCLE = "recycle"
 
 class Card(BaseModel):
     id: str
@@ -43,11 +42,12 @@ class GameState(BaseModel):
     attacker_cards: List[Card] = []
     defender_cards: List[Card] = []
     phase: str = "waiting"  # waiting, attacking, defending, instant, resolving, early_reveal
-    instant_played: bool = False  # Para controlar si ya se jugó una carta instantánea en esta ronda
-    last_instant_card: Optional[Card] = None  # Para guardar la última carta instantánea jugada
-    skip_votes: List[str] = []  # Lista de IDs de jugadores que votaron para omitir
+    instant_played: bool = False
+    last_instant_card: Optional[Card] = None
+    skip_votes: List[str] = []
     winner: Optional[str] = None
-    revealed_card: Optional[Card] = None  # Para EARLY_REVEAL: primera carta mostrada
+    revealed_card: Optional[Card] = None
+    deck_count: dict = {}  # Contador de cartas por tipo en el mazo
 
 class Room(BaseModel):
     room_id: str

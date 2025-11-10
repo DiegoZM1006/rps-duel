@@ -1,15 +1,13 @@
 import { useState } from 'react';
-import { getCardIcon } from '../utils/gameLogic';
 
 function HelpModal({ isOpen, onClose }) {
-  const [activeTab, setActiveTab] = useState('cards'); // 'cards', 'events', 'rules'
+  const [activeTab, setActiveTab] = useState('cards');
 
   if (!isOpen) return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center p-4 z-50">
       <div className="bg-game-card rounded-xl shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden border-2 border-game-accent">
-        {/* Header */}
         <div className="bg-game-accent p-4 flex justify-between items-center border-b-2 border-game-highlight">
           <h2 className="text-2xl font-bold text-white">📚 Guía del Juego</h2>
           <button
@@ -20,7 +18,6 @@ function HelpModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Tabs */}
         <div className="flex border-b-2 border-game-accent">
           <button
             onClick={() => setActiveTab('cards')}
@@ -54,14 +51,12 @@ function HelpModal({ isOpen, onClose }) {
           </button>
         </div>
 
-        {/* Content */}
         <div className="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
           {activeTab === 'cards' && <CardsTab />}
           {activeTab === 'events' && <EventsTab />}
           {activeTab === 'rules' && <RulesTab />}
         </div>
 
-        {/* Footer */}
         <div className="bg-game-accent p-4 flex justify-end border-t-2 border-game-highlight">
           <button
             onClick={onClose}
@@ -78,28 +73,28 @@ function HelpModal({ isOpen, onClose }) {
 function CardsTab() {
   const cards = [
     {
-      icon: '🪨',
-      name: 'Piedra',
-      type: 'Básica',
-      description: 'Carta básica del juego. En modo normal, defiende contra otra Piedra igualándola.',
-      quantity: '12 en el mazo'
-    },
-    {
-      icon: '📄',
-      name: 'Papel',
-      type: 'Básica',
-      description: 'Carta básica del juego. En modo normal, defiende contra otro Papel igualándolo.',
-      quantity: '12 en el mazo'
-    },
-    {
-      icon: '✂️',
-      name: 'Tijera',
-      type: 'Básica',
-      description: 'Carta básica del juego. En modo normal, defiende contra otra Tijera igualándola.',
-      quantity: '12 en el mazo'
-    },
-    {
       icon: '⚔️',
+      name: 'Guerrero',
+      type: 'Básica',
+      description: 'Unidad cuerpo a cuerpo resistente. En modo normal, defiende contra otro Guerrero igualándolo.',
+      quantity: '12 en el mazo'
+    },
+    {
+      icon: '🏹',
+      name: 'Arquero',
+      type: 'Básica',
+      description: 'Unidad de rango medio con alta precisión. En modo normal, defiende contra otro Arquero igualándolo.',
+      quantity: '12 en el mazo'
+    },
+    {
+      icon: '🗡️',
+      name: 'Asesino',
+      type: 'Básica',
+      description: 'Unidad ágil y letal. En modo normal, defiende contra otro Asesino igualándolo.',
+      quantity: '12 en el mazo'
+    },
+    {
+      icon: '👹',
       name: 'Joker de Ataque',
       type: 'Especial',
       description: 'Solo aparece en manos de ATACANTES. Es muy poderosa: solo puede ser defendida por un Joker de Defensa. Garantiza un punto si el defensor no tiene el Joker de Defensa.',
@@ -118,17 +113,29 @@ function CardsTab() {
       icon: '⚡',
       name: 'Cambio Relámpago',
       type: 'Instantánea',
-      description: 'Carta instantánea que permite cambiar una de tus cartas durante el juego. (Actualmente en desarrollo)',
-      quantity: '1 en el mazo',
-      disabled: true
+      description: 'Permite al ATACANTE cambiar una de sus cartas jugadas por otra de su mano durante la fase instantánea.',
+      quantity: '2 en el mazo'
+    },
+    {
+      icon: '🔄',
+      name: 'Reasignar',
+      type: 'Instantánea',
+      description: 'Permite al DEFENSOR intercambiar el orden de sus cartas de defensa durante la fase instantánea.',
+      quantity: '2 en el mazo'
     },
     {
       icon: '🚫',
       name: 'Anular',
       type: 'Instantánea',
-      description: 'Carta instantánea que anula una carta del oponente. (Actualmente en desarrollo)',
-      quantity: '1 en el mazo',
-      disabled: true
+      description: 'Cancela la última carta instantánea jugada por el oponente, revirtiendo su efecto.',
+      quantity: '2 en el mazo'
+    },
+    {
+      icon: '🎴',
+      name: 'Robo+1',
+      type: 'Instantánea',
+      description: 'Roba una carta adicional del mazo durante la fase instantánea.',
+      quantity: '2 en el mazo'
     }
   ];
 
@@ -145,9 +152,7 @@ function CardsTab() {
         <div
           key={index}
           className={`p-4 rounded-lg border-2 ${
-            card.disabled
-              ? 'bg-gray-800 border-gray-600 opacity-60'
-              : card.highlight
+            card.highlight
               ? 'bg-game-accent border-game-highlight'
               : 'bg-game-bg border-game-accent'
           }`}
@@ -169,9 +174,6 @@ function CardsTab() {
               </div>
               <p className="text-gray-300 text-sm mb-2">{card.description}</p>
               <p className="text-gray-400 text-xs italic">{card.quantity}</p>
-              {card.disabled && (
-                <p className="text-yellow-500 text-xs mt-2">⚠️ En desarrollo</p>
-              )}
             </div>
           </div>
         </div>
@@ -197,11 +199,11 @@ function EventsTab() {
     {
       icon: '🔄',
       name: 'Círculo Invertido',
-      description: 'Se activa el modo clásico de Piedra, Papel o Tijera. La defensa debe GANAR al ataque (no igualar).',
+      description: 'Se activa el sistema de ventajas tácticas. La defensa debe GANAR al ataque (no igualar).',
       mechanics: [
-        '📄 Papel le gana a 🪨 Piedra',
-        '✂️ Tijera le gana a 📄 Papel',
-        '🪨 Piedra le gana a ✂️ Tijera'
+        '🏹 Arquero vence a ⚔️ Guerrero (agilidad vs fuerza)',
+        '🗡️ Asesino vence a 🏹 Arquero (sigilo vs rango)',
+        '⚔️ Guerrero vence a 🗡️ Asesino (resistencia vs agilidad)'
       ],
       active: true
     },
@@ -263,11 +265,7 @@ function EventsTab() {
       {events.map((event, index) => (
         <div
           key={index}
-          className={`p-4 rounded-lg border-2 ${
-            event.active
-              ? 'bg-game-bg border-game-accent'
-              : 'bg-gray-800 border-gray-600 opacity-60'
-          }`}
+          className="bg-game-bg border-2 border-game-accent p-4 rounded-lg"
         >
           <div className="flex items-start gap-4">
             <div className="text-4xl">{event.icon}</div>
@@ -296,10 +294,6 @@ function EventsTab() {
                   </ul>
                 </div>
               )}
-
-              {!event.active && (
-                <p className="text-yellow-500 text-xs mt-2">⚠️ En desarrollo</p>
-              )}
             </div>
           </div>
         </div>
@@ -314,7 +308,7 @@ function RulesTab() {
       <div className="bg-game-accent p-4 rounded-lg">
         <h3 className="text-white font-bold text-lg mb-2">📋 Reglas del Juego</h3>
         <p className="text-gray-300 text-sm">
-          RPS Duel es un juego de cartas estratégico para 2 jugadores basado en piedra, papel o tijera.
+          RPS Duel es un juego de cartas estratégico para 2 jugadores basado en combate táctico.
         </p>
       </div>
 
@@ -348,7 +342,18 @@ function RulesTab() {
         <div className="space-y-2 text-gray-300 text-sm">
           <p>1. El defensor ve las cartas del atacante</p>
           <p>2. El defensor selecciona 2 cartas para defender (3 si es Trío de Choque)</p>
-          <p>3. Se resuelve el combate automáticamente</p>
+          <p>3. Opcionalmente, ambos jugadores pueden usar cartas instantáneas</p>
+          <p>4. Se resuelve el combate automáticamente</p>
+        </div>
+      </div>
+
+      <div className="bg-game-bg border-2 border-game-accent p-4 rounded-lg">
+        <h4 className="text-game-highlight font-bold mb-3">⚡ Fase de Instantáneas</h4>
+        <div className="space-y-2 text-gray-300 text-sm">
+          <p>• Después de jugar las cartas, si hay cartas instantáneas disponibles</p>
+          <p>• Cualquier jugador puede jugar 1 carta instantánea</p>
+          <p>• Ambos jugadores pueden votar para omitir esta fase</p>
+          <p>• Las instantáneas pueden cambiar el resultado del combate</p>
         </div>
       </div>
 
@@ -375,10 +380,11 @@ function RulesTab() {
       <div className="bg-game-bg border-2 border-game-accent p-4 rounded-lg">
         <h4 className="text-game-highlight font-bold mb-3">💡 Consejos Estratégicos</h4>
         <div className="space-y-2 text-gray-300 text-sm">
-          <p>• Como atacante, usa el Joker de Ataque ⚔️ estratégicamente</p>
+          <p>• Como atacante, usa el Joker de Ataque 👹 estratégicamente</p>
           <p>• Como defensor, conserva el Joker de Defensa 🛡️ para los Jokers de Ataque</p>
           <p>• Adapta tu estrategia según el evento activo</p>
-          <p>• En Círculo Invertido, piensa como en piedra, papel o tijera clásico</p>
+          <p>• En Círculo Invertido, piensa en las ventajas tácticas de cada unidad</p>
+          <p>• Las cartas instantáneas pueden cambiar completamente una ronda</p>
         </div>
       </div>
     </div>

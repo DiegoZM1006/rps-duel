@@ -4,7 +4,7 @@ import HelpModal from './HelpModal';
 function Lobby({ onJoinRoom, onCreateRoom, room, error, playerId }) {
   const [playerName, setPlayerName] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [showHelp, setShowHelp] = useState(false); // Retenemos el estado del HelpModal
+  const [showHelp, setShowHelp] = useState(false);
 
   const handleCreateRoom = () => {
     if (playerName.trim()) {
@@ -18,7 +18,6 @@ function Lobby({ onJoinRoom, onCreateRoom, room, error, playerId }) {
     }
   };
 
-  // Si ya estamos en una sala, mostramos la información de la sala
   if (room) {
     return (
       <div className="min-h-screen bg-game-bg flex items-center justify-center text-white p-4">
@@ -61,17 +60,17 @@ function Lobby({ onJoinRoom, onCreateRoom, room, error, playerId }) {
       <div className="bg-game-card p-8 rounded-xl shadow-2xl max-w-md w-full border-2 border-game-accent">
         <div className="text-center mb-8">
           <h1 className="text-5xl font-bold text-white mb-2">
-            🪨📄✂️
+            ⚔️🏹🗡️
           </h1>
           <h2 className="text-3xl font-bold text-game-highlight mb-2">
             RPS Duel
           </h2>
           <p className="text-gray-400 text-sm">
-            Ataque vs Defensa
+            Combate Táctico
           </p>
         </div>
 
-        <div className="space-y-6"> {/* Cambiado de form a div ya que los botones son acciones separadas */}
+        <div className="space-y-6">
           <div>
             <label className="block text-white text-sm font-medium mb-2">
               Tu nombre
@@ -136,15 +135,15 @@ function Lobby({ onJoinRoom, onCreateRoom, room, error, playerId }) {
           </button>
         </div>
 
-
         <div className="mt-6 p-4 bg-game-accent rounded-lg">
           <h3 className="text-white font-bold mb-2 text-sm">⚡ Resumen Rápido:</h3>
           <ul className="text-gray-300 text-xs space-y-1">
             <li>• Primer jugador en llegar a 5 puntos gana</li>
-            <li>• Atacante juega 2 cartas</li>
+            <li>• Atacante juega 2 cartas (Guerreros, Arqueros, Asesinos)</li>
             <li>• Defensor debe igualar tipos para defender</li>
             <li>• Roles se intercambian cada ronda</li>
             <li>• Cada partida tiene un evento especial único</li>
+            <li>• Cartas instantáneas pueden cambiar el resultado</li>
           </ul>
         </div>
       </div>

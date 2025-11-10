@@ -14,9 +14,9 @@ class GameManager:
         
         # 12 de cada tipo base
         for _ in range(12):
-            deck.append(Card(id=str(uuid.uuid4()), type=CardType.ROCK))
-            deck.append(Card(id=str(uuid.uuid4()), type=CardType.PAPER))
-            deck.append(Card(id=str(uuid.uuid4()), type=CardType.SCISSORS))
+            deck.append(Card(id=str(uuid.uuid4()), type=CardType.WARRIOR))
+            deck.append(Card(id=str(uuid.uuid4()), type=CardType.ARCHER))
+            deck.append(Card(id=str(uuid.uuid4()), type=CardType.ASSASSIN))
         
         # 2 Jokers de ataque y defensa
         for _ in range(2):
@@ -70,6 +70,14 @@ class GameManager:
         """Selecciona un evento aleatorio"""
         events = list(EventType)
         return random.choice(events)
+
+    def count_deck_cards(self, deck: List[Card]) -> dict:
+        """Cuenta cuántas cartas de cada tipo hay en el mazo"""
+        count = {}
+        for card in deck:
+            card_type = card.type.value
+            count[card_type] = count.get(card_type, 0) + 1
+        return count
 
     def create_room(self, player_id: str, player_name: str) -> Room:
         """Crea una nueva sala y añade al primer jugador."""
@@ -129,7 +137,8 @@ class GameManager:
             players=[player1, player2],
             event=self.select_random_event(),
             # event=EventType.RECYCLE,
-            phase="attacking"
+            phase="attacking",
+            deck_count=self.count_deck_cards(deck)
         )
         
         self.games[game_id] = game
@@ -177,6 +186,8 @@ class GameManager:
             if len(deck) > 0:
                 extra_cards = self.draw_cards_for_player(deck, 1, defender.is_attacker)
                 defender.hand.extend(extra_cards)
+                # Actualizar contador del mazo
+                game.deck_count = self.count_deck_cards(deck)
         else:
             game.attacker_cards = cards
         
@@ -375,8 +386,11 @@ class GameManager:
             # Robar una carta nueva
             deck = self._game_decks.get(game_id, [])
             if deck:
-                new_card = self.draw_cards_for_player(deck, 1, player.is_attacker)[0]
-                player.hand.append(new_card)
+                new_cards = self.draw_cards_for_player(deck, 1, player.is_attacker)
+                if new_cards:
+                    player.hand.append(new_cards[0])
+                    # Actualizar contador del mazo
+                    game.deck_count = self.count_deck_cards(deck)
         
         # Remover la carta instantánea jugada de la mano
         player.hand = [c for c in player.hand if c.id != card_id]
@@ -434,9 +448,9 @@ class GameManager:
         if event == EventType.INVERTED_CIRCLE:
             # Mapeo: qué carta de defensa le gana a cada carta de ataque
             winning_defense = {
-                CardType.ROCK: CardType.PAPER,      # PAPEL le gana a PIEDRA
-                CardType.PAPER: CardType.SCISSORS,   # TIJERA le gana a PAPEL
-                CardType.SCISSORS: CardType.ROCK     # PIEDRA le gana a TIJERA
+                CardType.WARRIOR: CardType.ARCHER,      # ARQUERO le gana a GUERRERO
+                CardType.ARCHER: CardType.ASSASSIN,     # ASESINO le gana a ARQUERO
+                CardType.ASSASSIN: CardType.WARRIOR     # GUERRERO le gana a ASESINO
             }
             return defense_card.type == winning_defense.get(attack_card.type)
         
@@ -463,6 +477,9 @@ class GameManager:
             if needed > 0 and len(deck) >= needed:
                 new_cards = self.draw_cards_for_player(deck, needed, player.is_attacker)
                 player.hand.extend(new_cards)
+        
+        # Actualizar contador del mazo después de robar cartas
+        game.deck_count = self.count_deck_cards(deck)
         
         # Reset cartas jugadas y reveladas
         game.attacker_cards = []
