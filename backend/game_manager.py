@@ -13,13 +13,13 @@ class GameManager:
         deck = []
         
         # 12 de cada tipo base
-        for _ in range(12):
+        for _ in range(48):
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.ROCK))
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.PAPER))
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.SCISSORS))
         
         # 2 Jokers de ataque y defensa
-        for _ in range(2):
+        for _ in range(8):
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.JOKER_ATTACK))
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.JOKER_DEFENSE))
         
