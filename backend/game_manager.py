@@ -13,19 +13,19 @@ class GameManager:
         deck = []
         
         # 12 de cada tipo base
-        for _ in range(12):
+        for _ in range(48):
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.WARRIOR))
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.ARCHER))
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.ASSASSIN))
         
         # 2 Jokers de ataque y defensa
-        for _ in range(2):
+        for _ in range(8):
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.JOKER_ATTACK))
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.JOKER_DEFENSE))
         
         # Cartas Instantáneas
         # 2 de cada tipo
-        for _ in range(2):
+        for _ in range():
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_CHANGE))
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_REASSIGN))
             deck.append(Card(id=str(uuid.uuid4()), type=CardType.INSTANT_CANCEL))
