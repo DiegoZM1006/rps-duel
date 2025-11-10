@@ -5,7 +5,7 @@ import json
 import uuid
 
 from game_manager import game_manager
-from models import PlayCardsRequest, InstantCardRequest
+from models import PlayCardsRequest
 
 app = FastAPI()
 
@@ -146,47 +146,32 @@ async def handle_game_action(player_id: str, player_name: str, data: dict):
         success = game_manager.play_defense(game_id, player_id, card_ids)
         
         if success:
-            # Resolver ronda automáticamente
+            # Calcular resultado de la ronda
             result = game_manager.resolve_round(game_id)
             game = game_manager.get_game(game_id)
             
             await manager.broadcast_to_room(room_id, {
-                "type": "round_resolved",
+                "type": "round_result",
                 "result": result,
                 "game": game.model_dump()
             })
     
-    elif action == "play_instant":
-        if data.get("card_id") == "skip":
-            success = game_manager.vote_skip_instant_phase(game_id, player_id)
-            if success:
-                game = game_manager.get_game(game_id)
-                if game.phase == "resolving":
-                    result = game_manager.resolve_round(game_id)
-                    game = game_manager.get_game(game_id)
-                    await manager.broadcast_to_room(room_id, {
-                        "type": "round_resolved",
-                        "result": result,
-                        "game": game.model_dump()
-                    })
-                else:
-                    await manager.broadcast_to_room(room_id, {
-                        "type": "skip_vote_updated",
-                        "game": game.model_dump(),
-                        "votes": len(game.skip_votes),
-                        "required": len(game.players)
-                    })
+    elif action == "continue_round":
+        success = game_manager.continue_to_next_round(game_id, player_id)
+        
+        if success:
+            game = game_manager.get_game(game_id)
+            await manager.broadcast_to_room(room_id, {
+                "type": "next_round",
+                "game": game.model_dump()
+            })
         else:
-            card_id = data.get("card_id")
-            target_card_id = data.get("target_card_id")
-            success = game_manager.play_instant(game_id, player_id, card_id, target_card_id)
-            
-            if success:
-                game = game_manager.get_game(game_id)
-                await manager.broadcast_to_room(room_id, {
-                    "type": "instant_played",
-                    "game": game.model_dump()
-                })
+            # Un jugador votó, esperar al otro
+            game = game_manager.get_game(game_id)
+            await manager.broadcast_to_room(room_id, {
+                "type": "continue_vote",
+                "game": game.model_dump()
+            })
     
     elif action == "get_game_state":
         game = game_manager.get_game(game_id)

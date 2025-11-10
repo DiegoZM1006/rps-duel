@@ -50,7 +50,6 @@ export const useWebSocket = () => { // Ya no recibe playerName para autoconectar
       switch (data.type) {
         case 'connected':
           setPlayerId(data.player_id);
-          // El nombre ya lo tenemos desde el input del lobby
           break;
           
         case 'room_created':
@@ -65,7 +64,7 @@ export const useWebSocket = () => { // Ya no recibe playerName para autoconectar
           
         case 'game_start':
           setGameState(data.game);
-          setRoom(null); // Salimos de la sala para entrar al juego
+          setRoom(null);
           setStatus('playing');
           break;
           
@@ -73,11 +72,19 @@ export const useWebSocket = () => { // Ya no recibe playerName para autoconectar
           setGameState(data.game);
           break;
           
-        case 'round_resolved':
+        case 'round_result':
           setGameState(data.game);
           if (data.game.winner) {
             setStatus('finished');
           }
+          break;
+        
+        case 'next_round':
+          setGameState(data.game);
+          break;
+        
+        case 'continue_vote':
+          setGameState(data.game);
           break;
           
         case 'game_state':
@@ -88,11 +95,7 @@ export const useWebSocket = () => { // Ya no recibe playerName para autoconectar
           setError(data.message);
           setGameState(prev => prev ? { ...prev, phase: 'finished' } : null);
           setRoom(null);
-          setStatus('finished'); // Un estado final para mostrar el mensaje
-          break;
-
-        case 'skip_vote_updated':
-          setGameState(data.game);
+          setStatus('finished');
           break;
 
         case 'error':
@@ -159,11 +162,9 @@ export const useWebSocket = () => { // Ya no recibe playerName para autoconectar
     });
   }, [sendMessage]);
 
-  const playInstant = useCallback((cardId, targetCardId = null) => {
+  const continueRound = useCallback(() => {
     sendMessage({
-      action: 'play_instant',
-      card_id: cardId,
-      target_card_id: targetCardId
+      action: 'continue_round'
     });
   }, [sendMessage]);
 
@@ -183,15 +184,15 @@ export const useWebSocket = () => { // Ya no recibe playerName para autoconectar
   return {
     isConnected,
     gameState,
-    room, // Exponer el estado de la sala
+    room,
     playerId,
-    playerName, // Exponer el nombre del jugador
+    playerName,
     status,
     error,
-    createRoom, // Exponer la función para crear sala
-    joinRoom, // Exponer la función para unirse a sala
+    createRoom,
+    joinRoom,
     playAttack,
     playDefense,
-    playInstant
+    continueRound
   };
 };
